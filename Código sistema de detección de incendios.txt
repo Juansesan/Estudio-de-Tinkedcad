@@ -1,0 +1,102 @@
+// Incluye la libreria:
+#include <LiquidCrystal.h>
+#include <Servo.h>
+
+//*****Pantalla LCD***********//
+// Se realiza la conexión de la pantalla 7 segmentos a los pines del arduino
+LiquidCrystal lcd(12, 13, 5, 4, 3, 2);
+
+int contrastPin = 6; //Pin que identifica el pin donde esta conectado el puerto de contraste del LCD
+int contrastValue= 1; // Valor del contraste en la Pantalla (5-20)
+
+//*****Sensor Temperatura*****//
+
+float sensorTemp = 0.0; //Lectura del sensor en valores decimales
+int sensorPin = A1; //Configuracion del Pin de lectura del sensor de T
+int temp = 0; //Lectura del sensor en valores enteros
+
+Servo ejemplo;
+int angulo;
+
+
+int gas;
+int buzzer = 10;
+
+void setup() {
+  
+  //***Puerto Serial***//
+  //Seteo puerto serial para hacer display del sensor de Temperatura
+  Serial.begin(9600);
+  
+  //***Pantalla LCD***//
+  //Seteo el pin "contraste" del LCS
+  pinMode(contrastPin,OUTPUT); //El pin contrast (LCD) debe estar configurado como salida
+  // Seteo numero de filas y columnas:
+  ejemplo.attach(9);
+}
+
+void loop() {
+    
+  //*********Pantalla LCD*************//
+  //Seteo el contraste
+  analogWrite(contrastPin, contrastValue); //El pin contrast (LCD) se setea por valor analogico (5-20)
+  // Seteo el cursor a columna 0, linea 1
+  //*********Sensor de Temperatura*************//
+    int lectura = analogRead(sensorPin);
+    float sensorTemp = ((5.0 /1024) * lectura * 100) -50 ;
+    Serial.print(sensorTemp);
+    Serial.print(" ; "); 
+    temp = (int)sensorTemp;
+    Serial.println(temp); 
+    delay(100);
+    //*******************************************//
+  
+  gas = analogRead(A0);
+  lcd.clear();
+  //********* Gas *************//
+  if (gas >= 400){//Cuando la temperatura supera los 400°C
+    lcd.begin(16, 2);// Imprimo mensaje en el LCD.
+    lcd.setCursor(2, 0);// Imprimo mensaje en el LCD.
+    lcd.print("  Incendio!");
+    
+    lcd.setCursor(5,1);
+    lcd.print("Evacue!");
+    tone (buzzer, 654, 100); // pin a utilizar , frecuencia para emitir sonido , duracion de tono en milisegundos 
+	Serial.print("Valor: ");// imprimir los valores
+	Serial.println(gas);
+    
+    ejemplo.write(90);
+    
+  }else{//********* Temperatura *************//
+        ejemplo.write(-5);
+
+    lcd.begin(16, 2);// Imprimo mensaje en el LCD.
+    lcd.setCursor(2,0);// Imprimo mensaje en el LCD.
+    lcd.print("Temperatura: ");
+    lcd.setCursor(6, 1);
+    lcd.print(temp);
+     if (temp >= 100){
+      lcd.setCursor(9, 1); // Posiciona el cursor para escribir
+      lcd.print("C");//Simbolo de Centigrados
+    }else if ((temp >= 0)&&(temp < 10)){
+      lcd.setCursor(8, 1); //Borra los espacios que no se usan
+      lcd.print(" ");
+      lcd.setCursor(7, 1); //Ubica el simbolo de centigrados
+      lcd.print("C");
+    } else if ((temp >= -9)&&(temp < 0)){
+      lcd.setCursor(9, 1); //Borra los espacios que no se usan
+      lcd.print(" ");
+      lcd.setCursor(8, 1); //Ubica el simbolo de centigrados
+      lcd.print("C");
+    }else if (temp < -10){
+      lcd.setCursor(9, 1); //Ubica el simbolo de centigrados
+      lcd.print("C");
+    }else{
+      lcd.setCursor(9, 1);
+      lcd.print(" ");
+      lcd.setCursor(8, 1);
+      lcd.print("C");
+    }
+  }
+  delay(750);
+}
